@@ -1,0 +1,130 @@
+Ciao! Qui vi insegno, o almeno ci provo, a creare un sistema di intelligenza artificiale (IA) basato su machine learning (ML) e modelli di linguaggio di grandi dimensioni (LLM).
+In questo modo, potrete eventualmente eseguire il fine-tuning di modelli esistenti o crearne uno personale.
+
+Prima di sparare codici a manetta prepariamo il campo di battaglia:
+
+Installazione Miniconda:
+
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+
+Creo Ambiente:
+
+conda create -n opentest python=3.10
+conda activate opentest
+
+PyTorch con supporto CUDA: 
+
+nb. Qui vi do due alternative , la 1 generalmente funziona su hardware recente ovvero cuda12.x, la seconda per i poveracci come me su hardware con cuda 11.4.
+    a voi la scielta.
+
+1:conda install pytorch torchvision torchaudio cudatoolkit=11.4 -c pytorch
+
+nb in caso errore:
+2:conda install -c conda-forge pytorch torchvision torchaudio cudatoolkit=11.4
+
+In pratica la uno tende ad installare i pacchetti più recenti mentre la due attinge da un catalogo piu ampio (conda-forge).
+
+Libreria transformers di Hugging Face è essenziale per lavorare con modelli come OpenWeb:
+pip install transformers datasets accelerate peft bitsandbytes
+
+Configurazione di Accelerate per Hugging Face:
+accelerate config
+
+Configuro Accelerate:
+accelerate config
+
+Schermata Proposta:
+------------------------------------------------------------------------------------------------------------------------------------In which compute environment are you running?
+This machine                                                                                                                        
+------------------------------------------------------------------------------------------------------------------------------------Which type of machine are you using?                                                                                                
+No distributed training                                                                                                             
+Do you want to run your training on CPU only (even if a GPU / Apple Silicon / Ascend NPU device is available)? [yes/NO]:NO          
+Do you wish to optimize your script with torch dynamo?[yes/NO]:yes                                                                  
+------------------------------------------------------------------------------------------------------------------------------------Which dynamo backend would you like to use?                                                                                         
+inductor                                                                                                                            
+Do you want to customize the defaults sent to torch.compile? [yes/NO]: NO                                                           
+Do you want to use DeepSpeed? [yes/NO]: NO                                                                                          
+What GPU(s) (by id) should be used for training on this machine as a comma-seperated list? [all]:all                                
+Would you like to enable numa efficiency? (Currently only supported on NVIDIA hardware). [yes/NO]: yes                              
+------------------------------------------------------------------------------------------------------------------------------------Do you wish to use mixed precision?                                                                                                 
+fp16         
+
+Comunque i parametri ve li spiego ora:
+Environment: Seleziona "This machine". (Macchina locale o servizio remoto, qui selezionato locale)
+Machine Type: Seleziona "No distributed training" (per utilizzare una sola GPU sulla tua macchina).
+Do you want to run your training on CPU only (even if a GPU / Apple Silicon / Ascend NPU device is available)? [yes/NO]: Devi selezionare "NO".
+Questo permetterà al tuo script di addestramento di utilizzare la GPU disponibile
+
+Do you wish to optimize your script with torch dynamo? [yes/NO]:yes
+Torch Dynamo è una funzionalità di PyTorch progettata per ottimizzare l'esecuzione del codice, migliorando le prestazioni complessive dell'addestramento.
+Attivando questa opzione, puoi beneficiare di miglioramenti nelle prestazioni senza dover modificare il tuo codice, rendendo l'addestramento più veloce ed efficiente.
+
+Which dynamo backend would you like to use? inductor
+Inductor è progettato per sfruttare al massimo le capacità delle GPU e ottimizzare le prestazioni in PyTorch.
+È attivamente supportato e tende a fornire buone prestazioni per vari modelli di deep learning.
+
+Do you want to customize the defaults sent to torch.compile? no
+Defaults Ottimali: La configurazione predefinita per torch.compile è già ottimizzata per la maggior parte dei casi d'uso. Se non hai esigenze specifiche di personalizzazione, lasciare le impostazioni predefinite è generalmente la scelta migliore.
+Semplicità: Evitare la personalizzazione rende la configurazione più semplice e riduce il rischio di errori.
+
+Do you want to use DeepSpeed? no
+DeepSpeed è una libreria progettata principalmente per ottimizzare e accelerare il training di modelli di grandi dimensioni e complessità. Se non stai lavorando con modelli molto grandi o non hai esigenze specifiche di distribuzione o ottimizzazione avanzata, non è necessario utilizzarla.
+Semplicità: Non utilizzare DeepSpeed semplifica il tuo setup e riduce la complessità dell'addestramento.
+
+What GPU(s) (by id) should be used for training on this machine as a comma-seperated list?all
+Utilizzare tutte le GPU: Se hai più GPU disponibili, selezionare "all" consente a accelerate di utilizzare automaticamente tutte le GPU disponibili per il training. Questo è utile se decidi di espandere il tuo lavoro in futuro per includere più GPU.
+Semplicità: Permette di evitare configurazioni manuali e complessità aggiuntive.
+Se preferisci specificare una sola GPU:
+Se desideri specificare solo la GPU Tesla K80, puoi inserire l'ID corrispondente, che di solito è 0 (o 1, se stai utilizzando una configurazione multi-GPU). Gli ID delle GPU possono essere visualizzati utilizzando il comando nvidia-smi. Se sei certo che la K80 sia l'unica GPU da utilizzare, puoi anche digitare:
+0
+
+Would you like to enable NUMA efficiency?yes
+NUMA (Non-Uniform Memory Access) è un'architettura di memoria che può migliorare le prestazioni su hardware NVIDIA. Abilitando questa opzione, potresti ottenere un uso più efficiente della memoria e delle risorse della GPU, specialmente se stai lavorando con modelli di grandi dimensioni o carichi di lavoro intensivi.
+Supporto per Hardware NVIDIA: Poiché stai utilizzando una GPU NVIDIA (la Tesla K80), questa opzione è rilevante e può apportare benefici.
+
+Do you wish to use mixed precision?fp16
+Prestazioni e Memoria: Utilizzare la precisione mista con fp16 (floating point 16) consente di ridurre il consumo di memoria e velocizzare il training. Questo è particolarmente utile su hardware come la Tesla K80, che beneficia dell'elaborazione in precisione ridotta.
+Compatibilità: La maggior parte dei modelli e delle librerie moderni (incluso PyTorch) supportano fp16, e il passaggio a questa modalità è generalmente semplice e diretto.
+
+Riepiloghiamo:
+
+Configurazione di accelerate
+Compute Environment: This machine
+Type of Machine: No distributed training
+Run on CPU only: NO (utilizzerai la GPU)
+Optimize with Torch Dynamo: YES
+Dynamo Backend: inductor
+Customize Defaults for Torch Compile: NO
+Use DeepSpeed: NO
+GPU(s) for Training: all
+Enable NUMA Efficiency: YES
+Mixed Precision: fp16
+
+
+Verifica Configurazione:
+accelerate configuration saved at /home/nextserver/.cache/huggingface/accelerate/default_config.yaml                                
+
+PEFT (Parameter Efficient Fine-Tuning),ottimizza il fine-tuning riducendo la necessità di risorse:
+pip install peft
+
+BitsAndBytes, ottimizza la memoria permettendo di lavorare con precisione inferiore (8-bit):
+pip install bitsandbytes
+
+PyYAML pacchetti di utilità per la configurazione e il monitoraggio delle risorse:
+pip install pyyaml psutil
+
+
+Test py:
+import torch
+print("CUDA disponibile:", torch.cuda.is_available())
+print("Dispositivo GPU:", torch.cuda.get_device_name(0))
+
+python3 Test_Conda_GPU.py
+
+CUDA disponibile: True
+Dispositivo GPU: Tesla K80
+
+
+conda deactivate
+conda activate openweb
